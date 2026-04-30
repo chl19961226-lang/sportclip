@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.venv/
+
+# Node
+**/node_modules/
+**/.next/
+**/out/
+
+# 环境变量
+**/.env
+**/.env.local
+**/.env.*.local
+
+# 模型权重 / 运行时数据 / 任务产物
+**/*.pt
+**/storage/
+
+# 日志
+*.log
