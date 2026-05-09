@@ -8,7 +8,8 @@ from typing import List
 from ..config import settings
 from ..tasks import store
 from .caption import generate_caption
-from .detector import classify_sport, detect
+from .classifier import classify_sport_advanced
+from .detector import detect
 from .editor import build_highlight_video
 from .frames import Frame, extract_keyframes
 from .highlight import pick_highlights, score_frames
@@ -46,11 +47,15 @@ def run_pipeline(job_id: str) -> None:
     store.set_stage(job_id, "detect_subjects", "YOLO 主体检测中…")
     detections = detect(all_frames, weights=settings.yolo_weights)
 
-    # 3. 运动分类 -------------------------------------------------------------
-    store.set_stage(job_id, "classify_sport", "识别运动类型…")
-    sport, conf, _counter = classify_sport(detections)
-    store.update(job_id, sport_type=sport, sport_confidence=round(conf, 3),
-                 message=f"识别为：{sport}（置信度 {conf:.2f}）")
+    # 3. 运动分类（VLM > CLIP > YOLO 启发式） --------------------------------
+    store.set_stage(job_id, "classify_sport", "识别运动类型（CLIP/VLM）…")
+    sport, conf, source = classify_sport_advanced(detections, all_frames)
+    store.update(
+        job_id,
+        sport_type=sport,
+        sport_confidence=round(conf, 3),
+        message=f"识别为：{sport}（{source} 置信度 {conf:.2f}）",
+    )
 
     # 4. 高光检测 -------------------------------------------------------------
     store.set_stage(job_id, "detect_highlights", "检测高光时刻…")

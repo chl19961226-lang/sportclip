@@ -4,6 +4,7 @@ python-multipart>=0.0.9
 pydantic>=2.9,<3
 pydantic-settings>=2.5,<3
 ultralytics>=8.3,<9
+open-clip-torch>=2.24,<3
 opencv-python-headless>=4.10,<5
 numpy>=1.26,<3
 pillow>=10.4
