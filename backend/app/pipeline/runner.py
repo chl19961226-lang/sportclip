@@ -77,9 +77,9 @@ def run_pipeline(job_id: str) -> None:
                  output_video=str(out_video),
                  thumbnail=str(thumb) if Path(thumb).exists() else None)
 
-    # 6. 文案生成 -------------------------------------------------------------
+    # 6. 文案生成（基于事实卡 + 高光画面短语 + 高光帧图） --------------------
     store.set_stage(job_id, "generate_caption", "生成分享文案…")
-    caption = generate_caption(sport, job.keywords, job.style)
+    caption = generate_caption(sport, job.keywords, job.style, highlights)
     store.update(job_id, caption=caption)
 
     # 7. 完成 -----------------------------------------------------------------

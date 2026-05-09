@@ -17,6 +17,8 @@ export type Highlight = {
   end: number;
   score: number;
   reason: string;
+  phrase?: string;
+  image_path?: string;
 };
 
 export type Job = {

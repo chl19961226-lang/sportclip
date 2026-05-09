@@ -75,10 +75,15 @@ PROMPTS: List[str] = list(SPORT_PROMPTS.values())
 
 
 # --------------------------------------------------------------------------- #
-# CLIP 零样本                                                                  #
+# CLIP 零样本（也供 highlight.py 复用，避免重复加载）                          #
 # --------------------------------------------------------------------------- #
 _clip_ctx = None
 _clip_failed = False
+
+
+def get_clip_context():
+    """返回 (model, preprocess, _, torch)；highlight 模块用其中的 model/preprocess/torch。"""
+    return _load_clip()
 
 
 def _load_clip():
