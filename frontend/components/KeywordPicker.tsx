@@ -62,7 +62,7 @@ export function KeywordPicker({ keywords, onKeywords, style, onStyle }: Props) {
               </motion.span>
             ))}
           </AnimatePresence>
-          <div className="flex items-center gap-1 rounded-full border border-line2 bg-white/5 px-2.5 py-1">
+          <div className="flex items-center gap-1 rounded-full border border-line2 bg-black/5 px-2.5 py-1">
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -83,7 +83,7 @@ export function KeywordPicker({ keywords, onKeywords, style, onStyle }: Props) {
                 add(text);
                 setText("");
               }}
-              className="grid h-6 w-6 place-items-center rounded-full text-secondary hover:bg-white/10 hover:text-primary"
+              className="grid h-6 w-6 place-items-center rounded-full text-secondary hover:bg-black/10 hover:text-primary"
             >
               <Plus className="h-3.5 w-3.5" />
             </motion.button>
@@ -96,7 +96,7 @@ export function KeywordPicker({ keywords, onKeywords, style, onStyle }: Props) {
               type="button"
               whileTap={{ scale: 0.94 }}
               onClick={() => add(s)}
-              className="rounded-full border border-line bg-white/[0.03] px-2.5 py-0.5 text-[12px] text-tertiary transition hover:border-accent/40 hover:text-primary"
+              className="rounded-full border border-line bg-black/[0.03] px-2.5 py-0.5 text-[12px] text-tertiary transition hover:border-accent/40 hover:text-primary"
             >
               {s}
             </motion.button>
@@ -122,7 +122,7 @@ export function KeywordPicker({ keywords, onKeywords, style, onStyle }: Props) {
                 className={`group relative rounded-ios border px-3.5 py-2.5 text-left transition ${
                   active
                     ? "bg-accent/12 shadow-glow"
-                    : "bg-white/[0.03] hover:bg-white/[0.06]"
+                    : "bg-black/[0.03] hover:bg-black/[0.06]"
                 }`}
               >
                 <div className="text-[14px] font-semibold tracking-tight text-primary">

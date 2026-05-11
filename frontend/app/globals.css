@@ -3,10 +3,12 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  --halo-1: rgba(94, 92, 230, 0.35);   /* indigo */
-  --halo-2: rgba(255, 55, 95, 0.28);   /* pink */
-  --halo-3: rgba(10, 132, 255, 0.30);  /* blue */
+  color-scheme: light;
+  /* 高级感的“柔光”：隐貃、低饱和，不上色 */
+  --halo-1: rgba(88, 86, 214, 0.14);   /* indigo soft */
+  --halo-2: rgba(255, 45, 85, 0.10);   /* pink soft */
+  --halo-3: rgba(0, 113, 227, 0.14);   /* blue soft */
+  --paper: #f5f5f7;                    /* apple.com 背景灰 */
 }
 
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -15,13 +17,13 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
     Inter, "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", sans-serif;
-  background-color: #000;
-  color: #f5f5f7;
+  background-color: var(--paper);
+  color: #1d1d1f;
   min-height: 100vh;
   letter-spacing: -0.01em;
 }
 
-/* 全局柔光背景：三色渐隐 + 极轻噪点（提升质感，去 AI 味） */
+/* 全局柔光背景：三色渐隐（低饱和）+ 极轻噪点（去 AI 平坑味） */
 body::before {
   content: "";
   position: fixed;
@@ -29,10 +31,10 @@ body::before {
   pointer-events: none;
   z-index: -2;
   background:
-    radial-gradient(60% 50% at 18% -10%, var(--halo-1) 0%, transparent 60%),
-    radial-gradient(50% 40% at 92% 8%, var(--halo-2) 0%, transparent 60%),
-    radial-gradient(60% 55% at 50% 115%, var(--halo-3) 0%, transparent 62%),
-    #000;
+    radial-gradient(60% 50% at 18% -10%, var(--halo-1) 0%, transparent 65%),
+    radial-gradient(50% 40% at 92% 8%, var(--halo-2) 0%, transparent 65%),
+    radial-gradient(60% 55% at 50% 115%, var(--halo-3) 0%, transparent 66%),
+    var(--paper);
 }
 body::after {
   content: "";
@@ -40,71 +42,73 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>");
 }
 
-::selection { background: rgba(10, 132, 255, 0.45); color: #fff; }
+::selection { background: rgba(0, 113, 227, 0.22); color: #1d1d1f; }
 
-/* iOS 风玻璃面板：高斯模糊 + 1px hairline 内嵌高光 */
+/* iOS 浅色玻璃面板：半透明白 + 1px hairline + 软阳影 */
 .glass {
-  background: rgba(28, 28, 30, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  backdrop-filter: saturate(180%) blur(24px);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+  backdrop-filter: saturate(180%) blur(22px);
   box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
-    0 12px 40px -12px rgba(0, 0, 0, 0.6);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.65),
+    0 1px 2px 0 rgba(0, 0, 0, 0.03),
+    0 14px 36px -18px rgba(15, 17, 32, 0.18);
 }
 
 .glass-strong {
-  background: rgba(22, 22, 24, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  -webkit-backdrop-filter: saturate(200%) blur(32px);
-  backdrop-filter: saturate(200%) blur(32px);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  -webkit-backdrop-filter: saturate(200%) blur(28px);
+  backdrop-filter: saturate(200%) blur(28px);
 }
 
-/* 进度条 shimmer：iOS 蓝→青→粉 多色推进 */
+/* 进度条 shimmer：iOS 蓝→紫→粉 多色推进（浅底上加深一点以足对比） */
 .shimmer-bar {
   background: linear-gradient(
     90deg,
-    #0a84ff 0%,
-    #5e5ce6 35%,
-    #ff375f 70%,
-    #0a84ff 100%
+    #0071e3 0%,
+    #5856d6 35%,
+    #ff2d55 70%,
+    #0071e3 100%
   );
   background-size: 200% 100%;
 }
 
-/* iOS 主按钮：蓝色渐变 + 内嵌高光 + 按下时缩放 */
+/* iOS 主按钮：蓝色渐变 + 内嵌高光 + 按下缩放 */
 .btn-ios {
-  background: linear-gradient(180deg, #2596ff 0%, #0a84ff 50%, #0067db 100%);
+  background: linear-gradient(180deg, #2b8bff 0%, #0071e3 55%, #0058b8 100%);
   color: #fff;
   box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.35),
-    inset 0 -1px 0 0 rgba(0, 0, 0, 0.18),
-    0 8px 24px -8px rgba(10, 132, 255, 0.6);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.16),
+    0 10px 26px -8px rgba(0, 113, 227, 0.45);
   transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s;
 }
-.btn-ios:hover { box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.4), 0 12px 28px -10px rgba(10,132,255,0.75); }
+.btn-ios:hover { box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.55), 0 14px 30px -10px rgba(0,113,227,0.6); }
 .btn-ios:active { transform: scale(0.97); }
-.btn-ios:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn-ios:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
-/* 浅按钮（次要操作） */
+/* 浅按钮（次要操作）：白底 + 极淺黑叠层 + hairline */
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  color: #f5f5f7;
-  transition: background 0.15s, transform 0.12s;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  color: #1d1d1f;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03);
+  transition: background 0.15s, transform 0.12s, box-shadow 0.2s;
 }
-.btn-ghost:hover { background: rgba(255, 255, 255, 0.10); }
+.btn-ghost:hover { background: #ffffff; box-shadow: 0 4px 14px -4px rgba(0,0,0,0.08); }
 .btn-ghost:active { transform: scale(0.97); }
 
-/* hairline 分隔线（iOS 风） */
-.hairline { box-shadow: 0 0.5px 0 0 rgba(255,255,255,0.08); }
+/* hairline 分隔线 */
+.hairline { box-shadow: 0 0.5px 0 0 rgba(0,0,0,0.08); }
 
-/* 让滚动条隐式（macOS 风） */
+/* 让滚动条隐式（macOS 浅色风） */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); background-clip: padding-box; border: 2px solid transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.16); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); background-clip: padding-box; border: 2px solid transparent; }

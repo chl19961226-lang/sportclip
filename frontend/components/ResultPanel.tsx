@@ -127,7 +127,7 @@ export function ResultPanel({ job }: { job: Job }) {
                       {h.phrase || h.reason}
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-full bg-white/8 px-2 py-0.5 text-[11px] tabular-nums text-secondary">
+                  <span className="shrink-0 rounded-full bg-black/8 px-2 py-0.5 text-[11px] tabular-nums text-secondary">
                     {(h.score * 100).toFixed(0)}
                   </span>
                 </li>

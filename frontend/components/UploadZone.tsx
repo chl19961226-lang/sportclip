@@ -93,7 +93,7 @@ export function UploadZone({ files, onChange }: Props) {
                 className="glass flex items-center justify-between gap-3 rounded-ios px-3.5 py-2.5"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white/5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-black/5">
                     <Film className="h-4 w-4 text-secondary" />
                   </div>
                   <div className="min-w-0">
@@ -107,7 +107,7 @@ export function UploadZone({ files, onChange }: Props) {
                   type="button"
                   whileTap={{ scale: 0.92 }}
                   onClick={() => onChange(files.filter((_, j) => j !== i))}
-                  className="grid h-8 w-8 place-items-center rounded-full text-tertiary hover:bg-white/8 hover:text-primary"
+                  className="grid h-8 w-8 place-items-center rounded-full text-tertiary hover:bg-black/8 hover:text-primary"
                   aria-label="移除"
                 >
                   <X className="h-4 w-4" />

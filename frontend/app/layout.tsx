@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SportClip · 多合一运动视频剪辑",
-  description: "一键识别运动种类、检出高光时刻、自动生成分享文案",
+  title: "Crux · 高光剪辑师",
+  description: "The crux of every move. 一键识别运动 · 检出高光 · 生成分享文案",
 };
 
 export const viewport = {
-  themeColor: "#000000",
+  themeColor: "#f5f5f7",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover" as const,

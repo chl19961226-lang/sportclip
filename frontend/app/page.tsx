@@ -80,21 +80,28 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="mb-3 inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.04] px-3 py-1 text-[12px] text-secondary backdrop-blur-ios"
+            className="mb-4 inline-flex items-center gap-1.5 text-[12.5px] uppercase tracking-[0.18em] text-tertiary"
           >
-            <Sparkles className="h-3 w-3 text-accent" />
-            SportClip · 多合一运动视频剪辑
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+            高光剪辑师 · for athletes
           </motion.div>
-          <h1 className="font-display text-[40px] font-bold leading-[1.05] tracking-[-0.025em] text-primary md:text-[56px]">
-            一键识别<span className="text-secondary"> · </span>
-            <span className="bg-gradient-to-r from-accent via-indigo to-pink bg-clip-text text-transparent">
-              高光剪辑
+          <h1 className="flex items-baseline gap-3 font-display text-[64px] font-semibold leading-[1] tracking-[-0.035em] text-primary md:text-[88px]">
+            <span className="bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
+              Crux
             </span>
-            <span className="text-secondary"> · </span>文案直出
+            <span className="text-[18px] font-medium tracking-tight text-tertiary md:text-[22px]">
+              /krʌks/
+            </span>
           </h1>
-          <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-secondary">
-            上传你的运动素材，YOLO + CLIP + LLM 协同识别运动种类、检出真正的
-            高光时刻、自动剪辑加转场，并按你给的关键词生成有画面感的小红书文案。
+          <p className="mt-3 font-display text-[16.5px] font-medium tracking-tight text-primary/90 md:text-[18px]">
+            The crux of every move.
+            <span className="text-tertiary"> · 把决定性的那一下留下来</span>
+          </p>
+          <p className="mt-4 max-w-xl text-[14.5px] leading-relaxed text-secondary">
+            上传你的运动素材，
+            <span className="text-primary">YOLO + CLIP + LLM</span>
+             协同识别运动种类、检出真正的高光瞬间、自动剪辑加转场，
+            并按你给的关键词生成有画面感的小红书文案。
           </p>
         </div>
         <motion.a
@@ -184,20 +191,20 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, type: "spring", stiffness: 220, damping: 26 }}
-          className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-iosXl border border-line bg-white/[0.04] px-5 py-4 backdrop-blur-ios"
+          className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-iosXl border border-line bg-black/[0.04] px-5 py-4 backdrop-blur-ios"
         >
           <div className="flex flex-wrap items-center gap-3 text-[13px] text-secondary">
             {error ? (
               <span className="text-pink">{error}</span>
             ) : (
               <>
-                <span className="rounded-full bg-white/8 px-2 py-0.5 text-[12px]">
+                <span className="rounded-full bg-black/8 px-2 py-0.5 text-[12px]">
                   {files.length} 个视频
                 </span>
-                <span className="rounded-full bg-white/8 px-2 py-0.5 text-[12px]">
+                <span className="rounded-full bg-black/8 px-2 py-0.5 text-[12px]">
                   {keywords.length} 个关键词
                 </span>
-                <span className="rounded-full bg-white/8 px-2 py-0.5 text-[12px]">
+                <span className="rounded-full bg-black/8 px-2 py-0.5 text-[12px]">
                   风格 · {style}
                 </span>
               </>
@@ -216,8 +223,13 @@ export default function HomePage() {
         </motion.div>
       )}
 
-      <footer className="mt-20 border-t border-line/60 pt-6 text-[12px] text-tertiary">
-        SportClip · YOLOv8 + CLIP + ffmpeg + LLM 协同 ·{" "}
+      <footer className="mt-20 flex flex-wrap items-center justify-between gap-3 border-t border-line/60 pt-6 text-[12px] text-tertiary">
+        <div>
+          <span className="font-display text-[13px] font-semibold tracking-tight text-secondary">
+            Crux
+          </span>
+          <span> · YOLOv8 + CLIP + ffmpeg + LLM 协同</span>
+        </div>
         <span className="text-secondary">数据仅在本机处理</span>
       </footer>
     </main>
@@ -243,7 +255,7 @@ function Card({
       className="glass rounded-iosXl p-5 md:p-6"
     >
       <div className="mb-4 flex items-center gap-2 text-[12.5px] text-secondary">
-        <span className="grid h-5 w-5 place-items-center rounded-full bg-white/8 text-[10.5px] font-semibold text-primary">
+        <span className="grid h-5 w-5 place-items-center rounded-full bg-black/8 text-[10.5px] font-semibold text-primary">
           {index}
         </span>
         {icon}

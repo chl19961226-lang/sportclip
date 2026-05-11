@@ -45,7 +45,7 @@ export function ProgressView({ job }: { job: Job }) {
         </div>
       </div>
 
-      <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-white/8">
+      <div className="mb-5 h-1.5 overflow-hidden rounded-full bg-black/8">
         <motion.div
           initial={false}
           animate={{ width: `${pct}%` }}
@@ -76,7 +76,7 @@ export function ProgressView({ job }: { job: Job }) {
               ) : status === "running" ? (
                 <Loader2 className="h-4 w-4 animate-spin text-accent" />
               ) : (
-                <span className="h-4 w-4 rounded-full border border-white/15" />
+                <span className="h-4 w-4 rounded-full border border-black/15" />
               )}
               <span className={status === "pending" ? "text-tertiary" : "text-primary"}>
                 {s.label}
