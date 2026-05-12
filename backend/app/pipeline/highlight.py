@@ -308,6 +308,7 @@ def pick_highlights(
     scores: List[HighlightScore],
     clip_duration: float,
     max_clips: int,
+    min_score: float = 0.0,
 ) -> List[dict]:
     """从打分结果挑出 top-N 高光时刻并合并临近片段。
 
@@ -315,8 +316,11 @@ def pick_highlights(
     """
     if not scores:
         return []
-    # 按分数降序，取 max_clips * 2 候选，再按时间 dedupe
-    cand = sorted(scores, key=lambda s: s.score, reverse=True)[: max_clips * 2]
+    # 按分数降序，取 max_clips * 3 候选（多一些以容纳 min_score 过滤），再按时间 dedupe
+    pool = [s for s in scores if s.score >= min_score]
+    if not pool:  # 阈值过严：放宽，避免空成片
+        pool = scores
+    cand = sorted(pool, key=lambda s: s.score, reverse=True)[: max(max_clips * 3, 6)]
     picked: List[dict] = []
     for s in cand:
         start = max(0.0, s.frame.timestamp - clip_duration / 2)
@@ -343,3 +347,107 @@ def pick_highlights(
     # 按时间顺序排序成片更连贯
     picked.sort(key=lambda p: (p["src"], p["start"]))
     return picked
+
+
+def pick_compilation_clips(
+    scores: List[HighlightScore],
+    sources: List[str],
+    clip_duration: float = 6.0,
+    per_source_max: int = 4,
+    total_max: int = 18,
+    min_per_source: int = 1,
+    min_score: float = 0.0,
+) -> List[dict]:
+    """合集模式的片段挑选：
+
+    - 输入 `sources` 是上传顺序的所有源视频路径（已按拍摄/上传时间排好）；
+    - **保证每条源至少出 `min_per_source` 段**（避免某条素材整条被丢）；
+    - 每条源最多 `per_source_max` 段；
+    - 单段时长 `clip_duration` 比高光模式宽（6s vs 3s），更"日记感"；
+    - 跨源按 `sources` 给定顺序串接；源内按 timestamp 顺序串接。
+    """
+    if not scores:
+        return []
+
+    # 按源分组
+    by_src: Dict[str, List[HighlightScore]] = {s: [] for s in sources}
+    for sc in scores:
+        by_src.setdefault(sc.frame.src, []).append(sc)
+
+    picked_all: List[dict] = []
+    for src in sources:
+        bucket = by_src.get(src, [])
+        if not bucket:
+            continue
+        # min_score 在每条源内独立过滤；若全被过滤掉则放回原 bucket（保底）
+        filtered = [s for s in bucket if s.score >= min_score]
+        if not filtered:
+            filtered = bucket
+        # 在每条源里按分数降序取候选
+        bucket_sorted = sorted(filtered, key=lambda s: s.score, reverse=True)
+        chosen_in_src: List[dict] = []
+        for s in bucket_sorted:
+            if len(chosen_in_src) >= per_source_max:
+                break
+            start = max(0.0, s.frame.timestamp - clip_duration / 2)
+            end = start + clip_duration
+            # 同源时间区间去重
+            overlap = any(
+                not (end <= p["start"] or start >= p["end"])
+                for p in chosen_in_src
+            )
+            if overlap:
+                continue
+            chosen_in_src.append({
+                "src": src,
+                "start": round(start, 3),
+                "end": round(end, 3),
+                "score": round(s.score, 3),
+                "reason": s.reason,
+                "phrase": s.phrase_cn,
+                "image_path": s.frame.image_path,
+            })
+        # 保底：即使该源全是低分，至少塞 1 段（取中段）
+        if not chosen_in_src and min_per_source > 0 and bucket:
+            mid = bucket[len(bucket) // 2]
+            start = max(0.0, mid.frame.timestamp - clip_duration / 2)
+            end = start + clip_duration
+            chosen_in_src.append({
+                "src": src,
+                "start": round(start, 3),
+                "end": round(end, 3),
+                "score": round(mid.score, 3),
+                "reason": "保底片段",
+                "phrase": mid.phrase_cn,
+                "image_path": mid.frame.image_path,
+            })
+        # 源内按时间顺序排
+        chosen_in_src.sort(key=lambda p: p["start"])
+        picked_all.extend(chosen_in_src)
+
+    # 如果超过 total_max，按"每条源轮流取一段"的方式裁剪以保证均匀
+    if len(picked_all) > total_max:
+        # 重新分组
+        groups: Dict[str, List[dict]] = {}
+        for p in picked_all:
+            groups.setdefault(p["src"], []).append(p)
+        for k in groups:
+            groups[k].sort(key=lambda x: x["start"])
+        # 轮询
+        round_robin: List[dict] = []
+        idx = 0
+        while len(round_robin) < total_max and any(groups[s] for s in sources):
+            for s in sources:
+                if groups.get(s):
+                    round_robin.append(groups[s].pop(0))
+                    if len(round_robin) >= total_max:
+                        break
+            idx += 1
+            if idx > 200:  # safety
+                break
+        picked_all = round_robin
+
+    # 最终按 (sources 顺序, start) 排
+    src_order = {s: i for i, s in enumerate(sources)}
+    picked_all.sort(key=lambda p: (src_order.get(p["src"], 999), p["start"]))
+    return picked_all

@@ -8,11 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .routers import files, jobs
+from .tasks import store
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
+
+# 启动时把 jobs 从磁盘 load 回内存（重启不丢历史）
+store.configure_persistence(settings.storage_path / "jobs.json")
 
 app = FastAPI(title="SportClip API", version="0.1.0")
 

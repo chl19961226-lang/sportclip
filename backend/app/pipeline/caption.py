@@ -93,6 +93,7 @@ def _llm_caption(
     keywords: List[str],
     style: str,
     highlights: List[Dict],
+    mode: str = "highlight",
 ) -> Optional[Dict[str, object]]:
     if not settings.use_openai:
         return None
@@ -107,14 +108,29 @@ def _llm_caption(
     preset = STYLE_PRESETS.get(style, STYLE_PRESETS["vlog"])
     fact = _build_fact_card(sport, keywords, highlights)
 
+    if mode == "compilation":
+        mode_brief = (
+            "本视频是「运动合集长片」（约 1.5~3 分钟），把一天/一段时期里的多段碎片素材串成一支完整作品。"
+            "文案应当像「剪辑师手记 / 一日记」——有时间感、有节奏、有起伏，"
+            "可以提「这一天」「这一缆 / 这一拨 / 这一程」，但不要假装在直播。"
+        )
+        size_rule = "标题 ≤ 22 字，正文 110~180 字，分 3~5 段，每段一行；"
+    else:
+        mode_brief = (
+            "本视频是「短高光预览」（约 20~40 秒），从素材里挑出最炸裂的几个瞬间。"
+            "文案要打眼、上头、有画面感，能在 3 秒内勾住读者继续看视频。"
+        )
+        size_rule = "标题 ≤ 22 字，正文 90~150 字，分 2~4 段，每段一行；"
+
     sys_prompt = (
         "你是顶级小红书运动博主，文案有 10 万+ 收藏经验。\n"
+        f"作品类型：{mode_brief}\n"
         "你的写作纪律：\n"
         "1. 必须从用户给的「画面素材 (scenes)」里挑 1~2 个具体动作/瞬间嵌入正文，让读者隔着屏幕能感到画面；\n"
         "2. 必须从「体感词典 (sensations)」里挑 1 个具体身体感受写进去（比如「雪刃啃住雪面那一下的回弹」）；\n"
         "3. 不要使用「加油」「热爱」「坚持」「燃烧」「永不放弃」「奔跑吧」「向阳而生」这类空泛口号；\n"
         "4. 不要堆 emoji，全文 emoji 不超过 4 个；\n"
-        "5. 标题 ≤ 22 字，正文 90~150 字，分 2~4 段，每段一行；\n"
+        f"5. {size_rule}\n"
         "6. hashtags 5~8 个，每个以 # 开头，混用运动专属 + 用户关键词；\n"
         "7. 输出严格 JSON: {\"title\": str, \"body\": str, \"hashtags\": [str,...]}"
     )
@@ -191,6 +207,7 @@ def _mock_caption(
     keywords: List[str],
     style: str,
     highlights: List[Dict],
+    mode: str = "highlight",
 ) -> Dict[str, object]:
     """本地兜底：从画面短语 + 体感词典 + 风格池现场组合，避免每次都一样。"""
     preset = STYLE_PRESETS.get(style, STYLE_PRESETS["vlog"])
@@ -243,16 +260,36 @@ def _mock_caption(
     title = rng.choice(title_pool)
 
     # 正文模板池（避免和上次一样）
-    body_pool = [
-        f"今天的画面里有一段我特别喜欢——{scene}。\n那种「{sensation}」在身体里走了好几秒，"
-        f"后劲比想象中大。{e1}\n继续在{venue}慢慢把节奏调出来。",
-        f"剪到「{scene}」的时候，自己回看了三遍。{e2}\n"
-        f"是那种「{sensation}」会一下把记忆拉回当下的感觉。\n做{sport}最迷人的就是这种瞬间。",
-        f"在{venue}，把今天最舒服的一下定格——{scene}。\n"
-        f"{sensation}，这种感受不靠词形容，得自己去到那里才知道。{e1}",
-        f"{scene}。短短一秒，但很值得反复看。\n"
-        f"身体记得的是「{sensation}」——这正是我喜欢{sport}的理由。{e2}",
-    ]
+    if mode == "compilation":
+        # 合集模式：更长、更“剩辑师手记”。
+        scene2 = rng.choice([p for p in phrases if p != scene] or [scene])
+        sensation2 = rng.choice([s for s in sensations if s != sensation] or [sensation])
+        body_pool = [
+            f"把今天{venue}里最舒服的几下串成了一个短片。\n"
+            f"开头是{scene}，中间一段是{scene2}。\n"
+            f"身体还记得「{sensation}」那一下，\n"
+            f"以及「{sensation2}」留下的后劲。{e1}\n"
+            f"不是最炸裂的一次，却是最想反复看的一次。",
+            f"记一下这一天的{sport}。\n"
+            f"上半场：{scene}，身体还没热起来，动作是谨慎的。\n"
+            f"下半场：{scene2}，「{sensation}」才真正清晰起来。{e2}\n"
+            f"收手的时候脸上的表情是「这一趟值了」。",
+            f"一整天的素材里挑了几段拼起来。\n"
+            f"越看越觉得，{sport}这件事里最迷人的不是某个闪光点，\n"
+            f"而是「{sensation}」、「{sensation2}」这些瞬间叠加起来的质感。{e1}\n"
+            f"在{venue}，把这一天留下来。",
+        ]
+    else:
+        body_pool = [
+            f"今天的画面里有一段我特别喜欢——{scene}。\n那种「{sensation}」在身体里走了好几秒，"
+            f"后劲比想象中大。{e1}\n继续在{venue}慢慢把节奏调出来。",
+            f"剪到「{scene}」的时候，自己回看了三遍。{e2}\n"
+            f"是那种「{sensation}」会一下把记忆拉回当下的感觉。\n做{sport}最迷人的就是这种瞬间。",
+            f"在{venue}，把今天最舒服的一下定格——{scene}。\n"
+            f"{sensation}，这种感受不靠词形容，得自己去到那里才知道。{e1}",
+            f"{scene}。短短一秒，但很值得反复看。\n"
+            f"身体记得的是「{sensation}」——这正是我喜欢{sport}的理由。{e2}",
+        ]
     body = rng.choice(body_pool)
 
     # hashtags 混合：用户关键词 + 运动池 + 通用
@@ -275,9 +312,10 @@ def generate_caption(
     keywords: List[str],
     style: str,
     highlights: Optional[List[Dict]] = None,
+    mode: str = "highlight",
 ) -> Dict[str, object]:
     highlights = highlights or []
-    via_llm = _llm_caption(sport, keywords, style, highlights)
+    via_llm = _llm_caption(sport, keywords, style, highlights, mode=mode)
     if via_llm:
         return via_llm
-    return _mock_caption(sport, keywords, style, highlights)
+    return _mock_caption(sport, keywords, style, highlights, mode=mode)

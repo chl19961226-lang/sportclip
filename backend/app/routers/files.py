@@ -31,3 +31,21 @@ def download_thumbnail(job_id: str):
     if not p.exists():
         raise HTTPException(status_code=404, detail="file missing")
     return FileResponse(p, media_type="image/jpeg")
+
+
+@router.get("/files/{job_id}/source_thumb/{idx}")
+def source_thumbnail(job_id: str, idx: int):
+    """单条上传素材的封面（用于视频库列表）。"""
+    job = store.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="job not found")
+    thumbs = job.source_thumbnails or []
+    if idx < 0 or idx >= len(thumbs):
+        raise HTTPException(status_code=404, detail="index out of range")
+    path_str = thumbs[idx]
+    if not path_str:
+        raise HTTPException(status_code=404, detail="thumbnail missing")
+    p = Path(path_str)
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="file missing")
+    return FileResponse(p, media_type="image/jpeg")

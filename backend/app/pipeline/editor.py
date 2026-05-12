@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -287,4 +288,179 @@ def build_highlight_video(
         make_thumbnail(final, thumb)
     except Exception as exc:  # noqa: BLE001
         log.warning("thumbnail failed: %s", exc)
+    return final, thumb
+
+
+# ============================ 合集模式 ============================ #
+# 苹果风的中性"片头/片尾"卡片：渐变底 + 大字 + 细描线 + 淡入淡出
+# 使用 PIL 渲染 PNG（中文友好），再 ffmpeg 把图变成短视频（带 Ken Burns 微推近）。
+
+
+def _find_cjk_font(size: int) -> "object":
+    """挑一个能渲染中文 + 英文的字体。"""
+    from PIL import ImageFont
+
+    candidates = [
+        # macOS
+        ("/System/Library/Fonts/PingFang.ttc", 2),
+        ("/System/Library/Fonts/STHeiti Medium.ttc", 0),
+        ("/System/Library/Fonts/Hiragino Sans GB.ttc", 1),
+        ("/System/Library/Fonts/Supplemental/Songti.ttc", 1),
+        # Linux fallback
+        ("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 0),
+        ("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 0),
+    ]
+    for path, idx in candidates:
+        if os.path.exists(path):
+            try:
+                return ImageFont.truetype(path, size=size, index=idx)
+            except Exception:  # noqa: BLE001
+                continue
+    return ImageFont.load_default()
+
+
+def _render_title_png(
+    title: str,
+    subtitle: str,
+    out_png: Path,
+    size: Tuple[int, int] = (1280, 720),
+) -> Path:
+    """生成"5.7 滑雪集锦"片头 PNG：墨色渐变背景 + 巨大主标题 + 细描副标题。"""
+    from PIL import Image, ImageDraw, ImageFilter
+
+    W, H = size
+    img = Image.new("RGB", (W, H), color=(8, 9, 14))
+
+    # 顶/底各放一个柔光晕（蓝+品红），模拟"光泽感"
+    halo = Image.new("RGB", (W, H), color=(8, 9, 14))
+    hd = ImageDraw.Draw(halo)
+    hd.ellipse([-200, -300, W // 2 + 200, 380], fill=(60, 80, 200))
+    hd.ellipse([W // 2 - 200, H - 320, W + 200, H + 200], fill=(180, 60, 120))
+    halo = halo.filter(ImageFilter.GaussianBlur(160))
+    img = Image.blend(img, halo, 0.55)
+
+    draw = ImageDraw.Draw(img)
+    # 顶部细线 + 副标签
+    top_label = (subtitle or "HIGHLIGHTS").upper()
+    f_label = _find_cjk_font(24)
+    f_main = _find_cjk_font(120)
+    f_kicker = _find_cjk_font(28)
+
+    # tracking: 用空格制造字距感
+    tracked = " ".join(list(top_label))
+    bbox = draw.textbbox((0, 0), tracked, font=f_label)
+    tw = bbox[2] - bbox[0]
+    draw.text(((W - tw) / 2, 90), tracked, fill=(220, 220, 230), font=f_label)
+    # 细线
+    line_w = 60
+    draw.rectangle([W / 2 - line_w / 2, 134, W / 2 + line_w / 2, 136], fill=(230, 230, 240))
+
+    # 主标题
+    bbox = draw.textbbox((0, 0), title, font=f_main)
+    mw, mh = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    draw.text(((W - mw) / 2, (H - mh) / 2 - 10), title, fill=(255, 255, 255), font=f_main)
+
+    # 底部 kicker
+    bottom = "CRUX · 高光剪辑师"
+    bbox = draw.textbbox((0, 0), bottom, font=f_kicker)
+    bw = bbox[2] - bbox[0]
+    draw.text(((W - bw) / 2, H - 90), bottom, fill=(200, 200, 210), font=f_kicker)
+
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    img.save(out_png, format="PNG")
+    return out_png
+
+
+def make_title_card(
+    title: str,
+    subtitle: str,
+    out_path: Path,
+    duration: float = 3.5,
+    fps: int = 30,
+) -> Path:
+    """生成一段 ~3.5s 的标题卡 mp4。微 Ken Burns + 首尾淡入淡出。"""
+    ff = _check_ffmpeg()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    png = out_path.with_suffix(".png")
+    _render_title_png(title, subtitle, png)
+    total_frames = max(15, int(duration * fps))
+    # zoompan d 必须 ≥ 2；用 1.0 → 1.06 的微推近
+    vf = (
+        f"zoompan=z='min(zoom+0.0008,1.06)':d={total_frames}:s=1280x720:fps={fps},"
+        f"fade=t=in:st=0:d=0.5,fade=t=out:st={max(0.0, duration - 0.5):.3f}:d=0.5,"
+        f"setsar=1,format=yuv420p"
+    )
+    # 加一路静音音轨保证后续 acrossfade 不掉链
+    cmd = [
+        ff, "-y",
+        "-loop", "1", "-t", f"{duration:.3f}", "-i", str(png),
+        "-f", "lavfi", "-t", f"{duration:.3f}",
+        "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+        "-vf", vf,
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-b:a", "128k",
+        "-shortest",
+        "-movflags", "+faststart",
+        str(out_path),
+    ]
+    _run(cmd)
+    return out_path
+
+
+def build_compilation_video(
+    clips_meta: List[dict],
+    work_dir: Path,
+    title: str,
+    subtitle: str,
+) -> Tuple[Path, Path]:
+    """合集模式：标题卡 → 多段 xfade → 收尾。返回 (compilation.mp4, thumbnail.jpg)。
+
+    `clips_meta` 已按时间顺序排好，每条 dict 含 src/start/end，单段时长一般 5~8s。
+    """
+    work_dir.mkdir(parents=True, exist_ok=True)
+    clip_dir = work_dir / "clips"
+    clip_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1) 切片
+    clips: List[Path] = []
+    for i, h in enumerate(clips_meta):
+        out = clip_dir / f"clip_{i:02d}.mp4"
+        try:
+            clips.append(cut_clip(h["src"], h["start"], h["end"], out))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("cut clip failed [%s %.2f-%.2f]: %s",
+                        h["src"], h["start"], h["end"], exc)
+    if not clips:
+        raise RuntimeError("合集模式：所有片段裁剪失败")
+
+    # 2) 标题卡
+    title_card = work_dir / "title.mp4"
+    try:
+        make_title_card(title, subtitle, title_card, duration=3.5)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("title card failed: %s — 跳过片头", exc)
+        title_card = None
+
+    # 3) 拼接：标题卡 + clips
+    final = work_dir / "highlight.mp4"  # 复用同名，前端无需改路径
+    seq = ([title_card] if title_card else []) + clips
+    try:
+        xfade_concat(seq, final, transition_dur=0.5, intro_fade=0.0, outro_fade=0.8)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("xfade compilation failed, fallback concat: %s", exc)
+        concat_clips(seq, final)
+
+    # 4) 缩略图：用标题卡 PNG（如果有），否则成片中段
+    thumb = work_dir / "thumbnail.jpg"
+    try:
+        if title_card and title_card.with_suffix(".png").exists():
+            # 把 PNG 直接转 jpg 作为封面（更好看）
+            ff = _check_ffmpeg()
+            _run([ff, "-y", "-i", str(title_card.with_suffix(".png")),
+                  "-vf", "scale=640:-2", str(thumb)])
+        else:
+            make_thumbnail(final, thumb, at=1.5)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("compilation thumbnail failed: %s", exc)
     return final, thumb
